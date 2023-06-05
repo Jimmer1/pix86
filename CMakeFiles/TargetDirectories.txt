@@ -1,0 +1,7 @@
+/home/jim/pix86/CMakeFiles/pix86.dir
+/home/jim/pix86/CMakeFiles/edit_cache.dir
+/home/jim/pix86/CMakeFiles/rebuild_cache.dir
+/home/jim/pix86/test/CMakeFiles/pix86_test.dir
+/home/jim/pix86/test/CMakeFiles/mrr_vis.dir
+/home/jim/pix86/test/CMakeFiles/edit_cache.dir
+/home/jim/pix86/test/CMakeFiles/rebuild_cache.dir

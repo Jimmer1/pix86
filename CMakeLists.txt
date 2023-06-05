@@ -1,36 +1,37 @@
 cmake_minimum_required (VERSION 3.22.1)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project (Pix86)
 
-set (CMAKE_CXX_STANDARD 23)
-
+add_subdirectory(test)
 
 
 add_executable(pix86
-    cpu.cc
-    executor.cc
-    decoder.cc 
-    fpu.cc
-    mmx.cc
-    sse.cc
-    util.cc
-    generic_reference.cc
+    src/cpu.cc
+    src/executor.cc
+    src/decoder.cc
+    src/fpu.cc
+    src/memory.cc
+    src/mmx.cc
+    src/sse.cc
+    src/util.cc
+    src/generic_reference.cc
+    src/flags.cc
 
-    pix86.cc
+    src/pix86.cc
 )
 
-add_executable(pix86_test
-    test_decoder.cc decoder.cc
-    test_fpu.cc fpu.cc
-    test_util.cc util.cc
-    test_generic_reference.cc generic_reference.cc
+target_include_directories(pix86 PRIVATE include)
 
-    test_pix86.cc
-)
+target_link_libraries(pix86 PRIVATE gcov)
 
 target_compile_options(pix86 PRIVATE
     -g
-    -pedantic
+    -O0
+    # -pedantic
     -Wall
     -Wcast-align
     -Wdouble-promotion
@@ -46,9 +47,13 @@ target_compile_options(pix86 PRIVATE
     -Wshadow
     -Wsign-conversion
     -Wunused
+    -std=c++23
+    -fprofile-generate 
+    -fprofile-arcs -ftest-coverage
+    -lgcov --coverage
 
     # Disabled warning flags.
-    -Wno-gnu-case-range
+    # -Wno-gnu-case-range
     -Wno-double-promotion
-    -Wno-unused-private-field # Re enable when optimising for size.
+    # -Wno-unused-private-field # Re enable when optimising for size.
 )
