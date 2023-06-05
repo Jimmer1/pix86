@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/sp.dir/scratchpad.cc.o CMakeFiles/sp.dir/__/src/decoder.cc.o CMakeFiles/sp.dir/__/src/memory.cc.o -o sp  -lgcov 

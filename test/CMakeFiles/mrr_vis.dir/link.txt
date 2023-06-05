@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/mrr_vis.dir/mrr_vis.cc.o CMakeFiles/mrr_vis.dir/__/src/decoder.cc.o CMakeFiles/mrr_vis.dir/__/src/memory.cc.o -o mrr_vis  -lgcov 
