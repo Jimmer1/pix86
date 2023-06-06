@@ -1,0 +1,12 @@
+CMakeCache.txt
+CMakeFiles/*
+cmake_install.cmake
+Makefile
+test/CMakeFiles/*
+test/cmake_install.cmake
+test/Makefile
+pix86
+test/pix86_test
+test/mrr_vis
+test/sp
+test/scratchpad.cc
