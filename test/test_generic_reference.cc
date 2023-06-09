@@ -38,7 +38,47 @@ void test_null_getter() {
     assert(t);
 }
 
-// GenericMemoryReference(std::uint8_t* parent) : parent_(parent), child_(mread<Child>(parent)) {}
+// template <typename Parent, typename Child>
+// class GenericRegisterReference {
+// private:
+//     Parent* parent_;
+//     Child child_;
+//     void(*destructor_)(Parent*, Child);
+// public:
+//     GenericRegisterReference() : parent_(nullptr), child_(Child{}), destructor_(nullptr) {}
+
+//     GenericRegisterReference(Parent* parent, Child(*constructor)(Parent), void(*destructor)(Parent*, Child))
+//         : parent_(parent), child_(constructor(*parent)), destructor_(destructor) {}
+
+//     ~GenericRegisterReference() {
+//         if (parent_ && destructor_)
+//             destructor_(parent_, child_);
+//     }
+
+//     // Debug helper
+//     const Parent* parent() const {
+//         return parent_;
+//     }
+
+//     operator const Child&() const {
+//         return child_;
+//     }
+
+//     operator Child&() {
+//         return child_;
+//     }
+// };
+
+
+void test_generic_register_reference_destructor() {
+    std::uint32_t reg = 0xABCDEF12;
+    {
+        auto grr = GenericRegisterReference(&reg, get_low_word, grh_set_low_word);
+        static_cast<std::uint16_t&>(grr) = 0xBEEF;
+    }
+    const bool t = reg == 0xABCDBEEF;
+    assert(t);
+}
 
 void test_generic_memory_reference_default_constructor() {
     auto grm = GenericMemoryReference<std::uint32_t>();
@@ -53,6 +93,18 @@ void test_generic_memory_reference_constructor() {
     assert(t);
 }
 
+void test_generic_memory_reference_destructor() {
+    std::uint8_t test_mem[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    {
+        auto grm = GenericMemoryReference<std::uint16_t>(test_mem);
+        static_cast<std::uint16_t&>(grm) = 0xBABE;
+    }
+    const std::uint8_t expected[] = {0xBE, 0xBA, 0xBE, 0xEF};
+    const bool t = std::equal(std::begin(test_mem), std::end(test_mem),
+                              std::begin(expected), std::end(expected));
+    assert(t);
+}
+
 void test_generic_reference() {
 
     test_grh_set_low_byte();
@@ -60,8 +112,10 @@ void test_generic_reference() {
     test_grh_set_low_word();
     test_grh_null_setter();
     test_null_getter();
+    test_generic_register_reference_destructor();
     test_generic_memory_reference_default_constructor();
     test_generic_memory_reference_constructor();
+    test_generic_memory_reference_destructor();
 
     std::cout << "All generic reference tests passed!" << std::endl;
 }

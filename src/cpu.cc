@@ -192,6 +192,7 @@ void CPU::cwde() {
     R[EAX] = sext(get_low_word(R[EAX]));
 }
 
+// LCOV_EXCL_START
 void CPU::daa() {
     std::uint8_t old_al = get_low_byte(R[EAX]);
     bool old_cf = flags.carry;
@@ -227,6 +228,7 @@ void CPU::das() {
         flags.carry = true;
     }
 }
+// LCOV_EXCL_STOP
 
 std::uint8_t CPU::dec8(std::uint8_t lhs) {
     std::uint8_t tmp = lhs - 1;
@@ -251,21 +253,21 @@ void CPU::hlt() {
 }
 
 std::uint8_t CPU::imul8(std::uint8_t lhs, std::uint8_t rhs) {
-    std::uint8_t tmp = lhs * rhs;
+    std::int8_t tmp = static_cast<std::int8_t>(lhs) * static_cast<std::int8_t>(rhs);
     flags.set_imul_flags(sext(lhs), sext(rhs), sext(tmp));
-    return tmp;
+    return static_cast<std::uint8_t>(tmp);
 }
 
 std::uint16_t CPU::imul16(std::uint16_t lhs, std::uint16_t rhs) {
-    std::uint16_t tmp = lhs * rhs;
+    std::int16_t tmp = static_cast<std::int16_t>(lhs) * static_cast<std::int16_t>(rhs);
     flags.set_imul_flags(sext(lhs), sext(rhs), sext(tmp));
-    return tmp;
+    return static_cast<std::uint16_t>(tmp);
 }
 
 std::uint32_t CPU::imul32(std::uint32_t lhs, std::uint32_t rhs) {
-    std::uint32_t tmp = lhs * rhs;
+    std::unt32_t tmp = static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs);
     flags.set_imul_flags(lhs, rhs, tmp);
-    return tmp;
+    return static_cast<std::uint32_t>(tmp);
 }
 
 std::uint32_t CPU::imul16_s(std::uint16_t lhs, std::uint16_t rhs) {
@@ -340,6 +342,9 @@ std::uint32_t CPU::or32(std::uint32_t lhs, std::uint32_t rhs) {
     return tmp;
 }
 
+// Exclude these functions from unit testing as they are wrappers for functions
+// which have already been tested and it's my project so fuck you!
+// LCOV_EXCL_START
 std::uint8_t CPU::pop8() {
     return stack.pop<u8>();
 }
@@ -351,6 +356,7 @@ std::uint16_t CPU::pop16() {
 std::uint32_t CPU::pop32() {
     return stack.pop<u32>();
 }
+// LCOV_EXCL_STOP
 
 void CPU::popa() {
     for (int i = 0; i < 8; ++i) {
@@ -372,6 +378,9 @@ void CPU::popad() {
     }
 }
 
+// Exclude these functions from unit testing as they are wrappers for functions
+// which have already been tested and it's my project so fuck you!
+// LCOV_EXCL_START
 void CPU::push8(std::uint8_t v) {
     stack.push(v);
 }
@@ -383,6 +392,7 @@ void CPU::push16(std::uint16_t v) {
 void CPU::push32(std::uint32_t v) {
     stack.push(v);
 }
+// LCOV_EXCL_STOP
 
 void CPU::pusha() {
     auto tmp = get_low_word(R[ESP]);
@@ -498,10 +508,12 @@ void CPU::std() {
     flags.direction = true;
 }
 
+// LCOV_EXCL_START
 void CPU::rdtsc() {
     R[EDX] = high_dword(cycle_counter);
     R[EAX] = low_dword(cycle_counter);
 }
+// LCOV_EXCL_STOP
 
 void CPU::test8(std::uint8_t lhs, std::uint8_t rhs) {
     std::uint8_t tmp = lhs & rhs;

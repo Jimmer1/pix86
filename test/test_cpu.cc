@@ -293,33 +293,6 @@ void test_cwde() {
     assert(t2);
 }
 
-// void CPU::daa() {
-//     std::uint8_t old_al = get_low_byte(R[EAX]);
-//     bool old_cf = flags.carry;
-//     flags.carry = 0;
-//     if ((old_al & 0xF) > 9 || flags.adjust == 1) {
-//         set_low_byte(R[EAX], old_al + 6);
-//         flags.carry = old_cf || (get_low_byte(R[EAX]) < old_al);
-//         flags.adjust = 1;
-//     } else {
-//         flags.adjust = 0;
-//     }
-//     if (old_al > 0x99 || old_cf == 1) {
-//         set_low_byte(R[EAX], get_low_byte(R[EAX]) + 0x60);
-//         flags.carry = 1;
-//     } else {
-//         flags.carry = 0;
-//     }
-// }
-// void test_daa() {
-//     CPU cpu;
-//     set_low_byte(cpu.R[EAX], 0x5C);
-//     cpu.daa();
-//     const bool t = get_low_byte(cpu.R[EAX]) == 0x62
-//         && ;
-
-// }
-
 void test_dec8() {
     CPU cpu;
     const bool t = cpu.dec8(0xAA) == 0xA9;
@@ -425,6 +398,130 @@ void test_or32() {
     assert(t);
 }
 
+template <typename I>
+void print(const I& value) {
+    std::cout << std::hex << value << std::endl;
+}
+
+void test_popa() {
+    CPU cpu;
+    cpu.R[ESP] = 0xABCD;
+    const std::uint16_t data[] = {
+        0xDEAD,
+        0xBEEF,
+        0xBABE,
+        0x0000,
+        0x1234,
+        0x5678,
+        0xA1B2,
+        0x1A2B
+    };
+
+    for (auto ptr = std::begin(data); ptr != std::end(data); ++ptr) {
+        cpu.push16(*ptr);
+    }
+
+    cpu.popa();
+    const bool t = get_low_word(cpu.R[EAX]) == 0x1A2B
+        && get_low_word(cpu.R[ECX]) == 0xA1B2
+        && get_low_word(cpu.R[EDX]) == 0x5678
+        && get_low_word(cpu.R[EBX]) == 0x1234
+        && cpu.R[ESP] == 0xABCD
+        && get_low_word(cpu.R[EBP]) == 0xBABE
+        && get_low_word(cpu.R[ESI]) == 0xBEEF
+        && get_low_word(cpu.R[EDI]) == 0xDEAD;
+    assert(t);
+}
+
+// void CPU::popad() {
+//     for (int i = 0; i < 8; ++i) {
+//         if (i == 4) {
+//             R[ESP] += 4;
+//         } else {
+//             regat(i) = stack.pop<u32>();
+//         }
+//     }
+// }
+
+void test_popad() {
+    CPU cpu;
+    cpu.R[ESP] = 0xABCD;
+    const std::uint32_t data[] = {
+        0xDEADBEEF,
+        0xBEEFBABE,
+        0x12345678,
+        0x00000000,
+        0xA1B2C3D4,
+        0x1A2BC34D,
+        0xB00B72A7,
+        0x72A7DEAD,
+    };
+
+    for (auto ptr = std::begin(data); ptr != std::end(data); ++ptr) {
+        cpu.push32(*ptr);
+    }
+
+    cpu.popad();
+    const bool t = cpu.R[EAX] == 0x72A7DEAD
+        && cpu.R[ECX] == 0xB00B72A7
+        && cpu.R[EDX] == 0x1A2BC34D
+        && cpu.R[EBX] == 0xA1B2C3D4
+        && cpu.R[ESP] == 0xABCD
+        && cpu.R[EBP] == 0x12345678
+        && cpu.R[ESI] == 0xBEEFBABE
+        && cpu.R[EDI] == 0xDEADBEEF;
+    assert(t);
+}
+
+void test_pusha() {
+    CPU cpu;
+    cpu.R[EAX] = 0xDEADBEEF;
+    cpu.R[ECX] = 0xBEEFBABE;
+    cpu.R[EDX] = 0x12345678;
+    cpu.R[EBX] = 0xA1B2C3D4;
+    cpu.R[ESP] = 0xABCD;
+    cpu.R[EBP] = 0x1A2BC34D;
+    cpu.R[ESI] = 0xB00B72A7;
+    cpu.R[EDI] = 0x72A7DEAD;
+
+    cpu.pusha();
+
+    const bool t = cpu.pop16() == 0xDEAD
+        && cpu.pop16() == 0x72A7
+        && cpu.pop16() == 0xC34D
+        && cpu.pop16() == 0xABCD
+        && cpu.pop16() == 0xC3D4
+        && cpu.pop16() == 0x5678
+        && cpu.pop16() == 0xBABE
+        && cpu.pop16() == 0xBEEF;
+
+    assert(t);
+}
+
+void test_pushad() {
+    CPU cpu;
+    cpu.R[EAX] = 0xDEADBEEF;
+    cpu.R[ECX] = 0xBEEFBABE;
+    cpu.R[EDX] = 0x12345678;
+    cpu.R[EBX] = 0xA1B2C3D4;
+    cpu.R[ESP] = 0xABCD;
+    cpu.R[EBP] = 0x1A2BC34D;
+    cpu.R[ESI] = 0xB00B72A7;
+    cpu.R[EDI] = 0x72A7DEAD;
+    
+    cpu.pushad();
+
+    const bool t = cpu.pop32() == 0x72A7DEAD
+        && cpu.pop32() == 0xB00B72A7
+        && cpu.pop32() == 0x1A2BC34D
+        && cpu.pop32() == 0xABCD
+        && cpu.pop32() == 0xA1B2C3D4
+        && cpu.pop32() == 0x12345678
+        && cpu.pop32() == 0xBEEFBABE
+        && cpu.pop32() == 0xDEADBEEF;
+    assert(t);
+}
+
 void test_sahf() {
     CPU cpu;
     set_low_byte(cpu.R[EAX], 0x17);
@@ -510,24 +607,6 @@ void test_sbb32() {
     assert(t2);
 }
 
-// std::uint8_t CPU::sub8(std::uint8_t lhs, std::uint8_t rhs) {
-//     std::uint8_t tmp = lhs - rhs;
-//     flags.set_sub_flags(sext(lhs), sext(rhs), sext(tmp));
-//     return tmp;
-// }
-
-// std::uint16_t CPU::sub16(std::uint16_t lhs, std::uint16_t rhs) {
-//     std::uint16_t tmp = lhs - rhs;
-//     flags.set_sub_flags(sext(lhs), sext(rhs), sext(tmp));
-//     return tmp;
-// }
-
-// std::uint32_t CPU::sub32(std::uint32_t lhs, std::uint32_t rhs) {
-//     std::uint32_t tmp = lhs - rhs;
-//     flags.set_sub_flags(lhs, rhs, tmp);
-//     return tmp;
-// }
-
 void test_stc() {
     CPU cpu;
     cpu.flags.carry = false;
@@ -541,6 +620,24 @@ void test_std() {
     cpu.flags.direction = false;
     cpu.std();
     const bool t = cpu.flags.direction;
+    assert(t);
+}
+
+void test_sub8() {
+    CPU cpu;
+    const bool t = cpu.sub8(0xBC, 0xAC) == 0x10;
+    assert(t);
+}
+
+void test_sub16() {
+    CPU cpu;
+    const bool t = cpu.sub16(0xDEAD, 0xBEEF) == 0x1FBE;
+    assert(t);
+}
+
+void test_sub32() {
+    CPU cpu;
+    const bool t = cpu.sub32(0xDEADBEEF, 0xBEEFBABE) == 0x1FBE0431;
     assert(t);
 }
 
@@ -640,6 +737,10 @@ void test_cpu() {
     test_or8();
     test_or16();
     test_or32();
+    test_popa();
+    test_popad();
+    test_pusha();
+    test_pushad();
     test_sahf();
     test_salc();
     test_sar16();
@@ -651,6 +752,9 @@ void test_cpu() {
     test_sbb32();
     test_stc();
     test_std();
+    test_sub8();
+    test_sub16();
+    test_sub32();
     test_test8();
     test_xchg();
     test_xlat();
