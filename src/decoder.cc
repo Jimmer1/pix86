@@ -14,14 +14,14 @@ std::tuple<unsigned int, unsigned int, unsigned int> split_sib(std::uint8_t sib)
     return split_modregrm(sib); // They use the same encoding.
 }
 
-std::tuple<Operands, unsigned int> decode_modregrm(std::uint8_t mrr, Memory& mem, unsigned long int pc, bool is8bit) {
+std::tuple<Operands, unsigned int> decode_modregrm(std::uint8_t mrr, Memory& mem, unsigned long int pc, bool is8bit, bool is_regencoded) {
     // A function that splits a modregrm byte into the required operands.
     // operands split into pointers.
     Operands op;
     const auto [mod, reg, rm] = split_modregrm(mrr);
     unsigned int skip = 2; // Skip both the opcode and modregrm.
     op.reg = reg;
-    if (is8bit) {
+    if (is8bit && !is_regencoded) {
         if (op.reg > 3) {
             op.reg_high_8bit = true;
             op.reg -= 4;

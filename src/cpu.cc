@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <stdexcept>
 
-CPU::CPU(std::size_t mem_size) : mem(mem_size), stack(1_mb, R[ESP]) {}
+CPU::CPU(std::size_t mem_size) : mem(mem_size), stack(1_mb, R[ESP]) {
+    R[ESP] = 1_mb - 1;
+}
 
 CPU::CPU(std::size_t mem_size, std::size_t stack_size) : mem(mem_size), stack(stack_size, R[ESP]) {
     R[ESP] = stack_size - 1;
@@ -265,8 +267,8 @@ std::uint16_t CPU::imul16(std::uint16_t lhs, std::uint16_t rhs) {
 }
 
 std::uint32_t CPU::imul32(std::uint32_t lhs, std::uint32_t rhs) {
-    std::unt32_t tmp = static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs);
-    flags.set_imul_flags(lhs, rhs, tmp);
+    std::int32_t tmp = static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs);
+    flags.set_imul_flags(lhs, rhs, static_cast<std::uint32_t>(tmp));
     return static_cast<std::uint32_t>(tmp);
 }
 
@@ -304,25 +306,58 @@ void CPU::lahf() {
     set_low_word_high_byte(R[EAX], flags.get_flags8());
 }
 
-std::uint16_t CPU::lea16([[maybe_unused]] std::uint16_t lhs, std::uint32_t addr) {
+std::uint16_t CPU::lea16([[maybe_unused]] const std::uint16_t lhs, const std::uint32_t addr) {
     return addr;
 }
 
-std::uint32_t CPU::lea32([[maybe_unused]] std::uint32_t lhs, std::uint32_t addr) {
+std::uint32_t CPU::lea32([[maybe_unused]] const std::uint32_t lhs, const std::uint32_t addr) {
     return addr;
 }
 
-std::uint8_t CPU::mov8([[maybe_unused]] std::uint8_t lhs, std::uint8_t rhs) {
+std::uint8_t CPU::mov8([[maybe_unused]] const std::uint8_t lhs, const std::uint8_t rhs) {
     return rhs;
 }
 
-std::uint16_t CPU::mov16([[maybe_unused]] std::uint16_t lhs, std::uint16_t rhs) {
+std::uint16_t CPU::mov16([[maybe_unused]] const std::uint16_t lhs, const std::uint16_t rhs) {
     return rhs;
 }
 
-std::uint32_t CPU::mov32([[maybe_unused]] std::uint32_t lhs, std::uint32_t rhs) {
+std::uint32_t CPU::mov32([[maybe_unused]] const std::uint32_t lhs, const std::uint32_t rhs) {
     return rhs;
 }
+
+std::uint16_t CPU::cmovo16(const std::uint16_t lhs, const std::uint16_t rhs) {
+    return flags.overflow ? rhs : lhs;
+}
+
+std::uint32_t CPU::cmovo32(const std::uint32_t lhs, const std::uint32_t rhs) {
+    return flags.overflow ? rhs : lhs;
+}
+
+std::uint16_t CPU::cmovno16(const std::uint16_t lhs, const std::uint16_t rhs) {
+    return !flags.overflow ? rhs : lhs;
+}
+
+std::uint32_t CPU::cmovno32(const std::uint32_t lhs, const std::uint32_t rhs) {
+    return !flags.overflow ? rhs : lhs;
+}
+
+std::uint16_t CPU::cmovc16(const std::uint16_t lhs, const std::uint16_t rhs) {
+    return flags.carry ? rhs : lhs;
+}
+
+std::uint32_t CPU::cmovc32(const std::uint32_t lhs, const std::uint32_t rhs) {
+    return flags.carry ? rhs : lhs;
+}
+
+std::uint16_t CPU::cmovnc16(const std::uint16_t lhs, const std::uint16_t rhs) {
+    return !flags.carry ? rhs : lhs;
+}
+
+std::uint32_t CPU::cmovnc32(const std::uint32_t lhs, const std::uint32_t rhs) {
+    return !flags.carry ? rhs : lhs;
+}
+
 
 std::uint8_t CPU::or8(std::uint8_t lhs, std::uint8_t rhs) {
     std::uint8_t tmp = lhs | rhs;

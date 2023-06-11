@@ -762,5 +762,5 @@ void test_cpu() {
     test_xor16();
     test_xor32();
     
-    std::cout << "All cpu tests passed! Time taken: " << std::endl;
+    std::cout << "All cpu tests passed!" << std::endl;
 }

@@ -110,6 +110,14 @@ public:
     std::uint16_t mov16(std::uint16_t, std::uint16_t);
     std::uint32_t mov32(std::uint32_t, std::uint32_t);
 
+    std::uint16_t cmovo16(std::uint16_t, std::uint16_t);
+    std::uint32_t cmovo32(std::uint32_t, std::uint32_t);
+    std::uint16_t cmovno16(std::uint16_t, std::uint16_t);
+    std::uint32_t cmovno32(std::uint32_t, std::uint32_t);
+    std::uint16_t cmovc16(std::uint16_t, std::uint16_t);
+    std::uint32_t cmovc32(std::uint32_t, std::uint32_t);
+    std::uint16_t cmovnc16(std::uint16_t, std::uint16_t);
+    std::uint32_t cmovnc32(std::uint32_t, std::uint32_t);
 
     // Stack manipulation instruction.
     std::uint8_t pop8();

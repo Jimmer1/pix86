@@ -1,4 +1,5 @@
-#pragma once
+#ifndef EXECUTOR_HH
+#define EXECUTOR_HH
 
 #include "cpu.hh"
 #include "decoder.hh"
@@ -37,16 +38,84 @@ void binary_operation(StructuredOperands<I>& so, CPU& cpu, I(CPU::*op)(I, I), bo
 }
 
 enum class Opcode {
+
+    NULL_OP,
+
+    AAA,
+    AAD,
+    AAM,
+
+    ADC8,
+    ADC16_32,
     ADD8,
     ADD16_32,
+    AND8,
+    AND16_32,
+
+    CBW,
+    CDQ,
+
+    CLC,
+    CLD,
+
+    CMOVC16_32,
+    CMOVNC16_32,
+    CMOVNO16_32,
+    CMOVO16_32,
+
+    CMC,
+
+    CWD,
+    CWDE,
+
+    DAA,
+    DAS,
 
     HLT,
 
+    INC16,
+    INC32,
+
+    LAHF,
+
+    OR8,
+    OR16_32,
+
+    POPA,
+    POPAD,
+
+    PUSH8,
+    PUSHA,
+    PUSHAD,
+    PUSH_CS,
+    PUSH_DS,
+    POP_DS,
     POP_ES,
     PUSH_ES,
+    PUSH_FS,
+    PUSH_GS,
+    POP_SS,
+    PUSH_SS,
 
     SAHF,
+    SALC,
+
+    SBB8,
+    SBB16_32,
+
+    STC,
+    STD,
+
+    SUB8,
+    SUB16_32,
+
+    XCHG,
+    XLAT
 };
+
+constexpr std::underlying_type_t<Opcode> op_cast(const Opcode& op) {
+    return std::underlying_type_t<Opcode>(op);
+}
 
 /*
     struct OperationData {
@@ -144,13 +213,15 @@ public:
     friend struct access_executor;
 
     Opcode last_op;
+
     unsigned long int pcnt() const {return pc;}
 
-    Executor(const std::span<std::uint8_t> code) : fpu(cpu.flags) {
+    Executor(std::span<const std::uint8_t> code) : fpu(cpu.flags) {
         std::copy(code.begin(), code.end(), cpu.mem.begin());
     }
 
     void execute(bool, bool, unsigned int = 0);
+    void run_single_cycle(bool=false);
 };
 
 using CPU_op8_t = std::uint8_t(CPU::*)(std::uint8_t, std::uint8_t);
@@ -160,3 +231,5 @@ using CPU_op32_t = std::uint32_t(CPU::*)(std::uint32_t, std::uint32_t);
 CPU_op8_t get_regencoded_op_8bit(unsigned int);
 CPU_op16_t get_regencoded_op_16bit(unsigned int);
 CPU_op32_t get_regencoded_op_32bit(unsigned int);
+
+#endif

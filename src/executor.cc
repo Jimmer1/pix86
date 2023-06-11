@@ -29,32 +29,24 @@ void Executor::execute_binary_accumulator_immediate_operation_16_32bit(std::uint
         cpu.R[EAX] = (cpu.*op32)(cpu.R[EAX], imm32);
         pc += 1 + sizeof(std::uint32_t);
     }
-
+    reset_prefixes();
 }
 
 CPU_op8_t get_regencoded_op_8bit(const unsigned int reg) {
-    switch (reg) {
-        case 0: return &CPU::add8;
-        case 1: return &CPU::or8;
-        case 2: return &CPU::adc8;
-        case 3: return &CPU::sbb8;
-        case 4: return &CPU::and8;
-        case 5: return &CPU::sub8;
-        case 6: return &CPU::xor8;
-        case 7: return &CPU::cmp8;
-        default: throw std::domain_error("");
-    }
+    if (reg >= 8)
+        throw std::domain_error("");
+
+    const CPU_op8_t ops[] = {&CPU::add8, &CPU::or8, &CPU::adc8, &CPU::sbb8, &CPU::and8, &CPU::sub8, &CPU::xor8, &CPU::cmp8};
+    return ops[reg];
 }
 
 void Executor::execute_binary_immediate_regencoded_operation_8bit() {
-    std::uint8_t mrr = cpu.mem[pc + 1];
-    const auto [ops, skip] = decode_modregrm(mrr, cpu.mem, pc, true);
+    const std::uint8_t mrr = cpu.mem[pc + 1];
+    const auto [ops, skip] = decode_modregrm(mrr, cpu.mem, pc, true, true);
     auto so = structure_unary_operands<std::uint8_t>(cpu.R, cpu.mem, ops);
     pc += skip;
-    std::uint8_t imm8 = mread<std::uint8_t>(&cpu.mem[pc]);
-
+    const std::uint8_t imm8 = mread<std::uint8_t>(&cpu.mem[pc]);
     auto op = get_regencoded_op_8bit(ops.reg);
-
     if (so.is_rm_ptr) {
         static_cast<std::uint8_t&>(so.rm.m) = (cpu.*op)(static_cast<std::uint8_t&>(so.rm.m), imm8);
     } else {
@@ -104,6 +96,7 @@ void Executor::execute_binary_immediate_regencoded_operation_16_32bit() {
         } else {
             static_cast<std::uint16_t&>(so.rm.r) = (cpu.*op)(static_cast<std::uint16_t&>(so.rm.r), imm16);
         }
+        pc += sizeof(std::uint16_t);
     } else {
         auto so = structure_unary_operands<std::uint32_t>(cpu.R, cpu.mem, ops);
         std::uint32_t imm32 = mread<std::uint32_t>(&cpu.mem[pc]);
@@ -113,8 +106,9 @@ void Executor::execute_binary_immediate_regencoded_operation_16_32bit() {
         } else {
             static_cast<std::uint32_t&>(so.rm.r) = (cpu.*op)(static_cast<std::uint32_t&>(so.rm.r), imm32);
         }
+        pc += sizeof(std::uint32_t);
     }
-    ++pc;
+    reset_prefixes();
 }
 
 void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned int cycles) {
@@ -169,33 +163,41 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0x8: {
                 execute_binary_operation_8bit<0x8>(&CPU::or8);
+                last_op = Opcode::OR8;
             } break;
 
             case 0x9: {
                 execute_binary_operation_16_32_bit<0x9>(&CPU::or16, &CPU::or32);
+                last_op = Opcode::OR16_32;
             } break;
 
             case 0xA: {
                 execute_binary_operation_8bit<0xA>(&CPU::or8);
+                last_op = Opcode::OR8;
             } break;
 
             case 0xB: {
                 execute_binary_operation_16_32_bit<0xB>(&CPU::or16, &CPU::or32);
+                last_op = Opcode::OR16_32;
             } break;
 
             case 0xC: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::or8);
+                last_op = Opcode::OR8;
             } break;
 
             case 0xD: {
-                execute_binary_operation_16_32_bit<0x3>(&CPU::or16, &CPU::or32);
+                execute_binary_accumulator_immediate_operation_16_32bit(&CPU::or16, &CPU::or32);
+                last_op = Opcode::OR16_32;
             } break;
 
             case 0xE: {
                 cpu.push16(cpu.cs);
+                last_op = Opcode::PUSH_CS;
                 ++pc;
             } break;
 
+            // LCOV_EXCL_START
             case 0xF: {
                 ++pc;
                 switch (std::uint8_t sOpcode = cpu.mem[pc]; sOpcode) {
@@ -204,27 +206,23 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                     } break;
 
                     case 0x40: {
-                        if (cpu.flags.overflow) {
-                            execute_binary_operation_16_32_bit<CMOV>(&CPU::mov16, &CPU::mov32);
-                        }
+                        execute_binary_operation_16_32_bit<CMOV>(&CPU::cmovo16, &CPU::cmovo32);
+                        last_op = Opcode::CMOVO16_32;
                     } break;
 
                     case 0x41: {
-                        if (! cpu.flags.overflow) {
-                            execute_binary_operation_16_32_bit<CMOV>(&CPU::mov16, &CPU::mov32);
-                        }
+                        execute_binary_operation_16_32_bit<CMOV>(&CPU::cmovno16, &CPU::cmovno32);
+                        last_op = Opcode::CMOVNO16_32;
                     } break;
 
                     case 0x42: {
-                        if (cpu.flags.carry) {
-                            execute_binary_operation_16_32_bit<CMOV>(&CPU::mov16, &CPU::mov32);
-                        }
+                        execute_binary_operation_16_32_bit<CMOV>(&CPU::cmovc16, &CPU::cmovc32);
+                        last_op = Opcode::CMOVC16_32;
                     } break;
 
                     case 0x43: {
-                        if (! cpu.flags.carry) {
-                            execute_binary_operation_16_32_bit<CMOV>(&CPU::mov16, &CPU::mov32);
-                        }
+                        execute_binary_operation_16_32_bit<CMOV>(&CPU::cmovnc16, &CPU::cmovnc32);
+                        last_op = Opcode::CMOVNC16_32;
                     } break;
 
                     case 0x44: {
@@ -301,6 +299,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
                     case 0xA0: {
                         cpu.push16(cpu.fs);
+                        last_op = Opcode::PUSH_FS;
                         ++pc;
                     } break;
 
@@ -311,6 +310,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
                     case 0xA8: {
                         cpu.push16(cpu.gs);
+                        last_op = Opcode::PUSH_GS;
                         ++pc;
                     } break;
 
@@ -331,140 +331,175 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                     } break;
                 }
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x10: {
                 execute_binary_operation_8bit<0x10>(&CPU::adc8);
+                last_op = Opcode::ADC8;
             } break;
 
             case 0x11: {
                 execute_binary_operation_16_32_bit<0x11>(&CPU::adc16, &CPU::adc32);
+                last_op = Opcode::ADC16_32;
             } break;
 
             case 0x12: {
                 execute_binary_operation_8bit<0x12>(&CPU::adc8);
+                last_op = Opcode::ADC8;
             } break;
 
             case 0x13: {
                 execute_binary_operation_16_32_bit<0x13>(&CPU::adc16, &CPU::adc32);
+                last_op = Opcode::ADC16_32;
             } break;
 
             case 0x14: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::adc8);
+                last_op = Opcode::ADC8;
             } break;
 
             case 0x15: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::adc16, &CPU::adc32);
+                last_op = Opcode::ADC16_32;
             } break;
 
             case 0x16: {
                 cpu.push16(cpu.ss);
+                last_op = Opcode::PUSH_SS;
                 ++pc;
             } break;
 
             case 0x17: {
                 cpu.ss = cpu.pop16();
+                last_op = Opcode::POP_SS;
                 ++pc;
             } break;
 
             case 0x18: {
                 execute_binary_operation_8bit<0x18>(&CPU::sbb8);
+                last_op = Opcode::SBB8;
             } break;
 
             case 0x19: {
                 execute_binary_operation_16_32_bit<0x19>(&CPU::sbb16, &CPU::sbb32);
+                last_op = Opcode::SBB16_32;
             } break;
 
             case 0x1A: {
                 execute_binary_operation_8bit<0x1A>(&CPU::sbb8);
+                last_op = Opcode::SBB8;
             } break;
 
             case 0x1B: {
                 execute_binary_operation_16_32_bit<0x1B>(&CPU::sbb16, &CPU::sbb32);
+                last_op = Opcode::SBB16_32;
             } break;
 
             case 0x1C: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::sbb8);
+                last_op = Opcode::SBB8;
             } break;
 
             case 0x1D: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::sbb16, &CPU::sbb32);
+                last_op = Opcode::SBB16_32;
             } break;
 
             case 0x1E: {
                 cpu.push16(cpu.ds);
+                last_op = Opcode::PUSH_DS;
                 ++pc;
             } break;
 
             case 0x1F: {
                 cpu.ds = cpu.pop16();
+                last_op = Opcode::POP_DS;
                 ++pc;
             } break;
 
             case 0x20: {
                 execute_binary_operation_8bit<0x20>(&CPU::and8);
+                last_op = Opcode::AND8;
             } break;
 
             case 0x21: {
                 execute_binary_operation_16_32_bit<0x21>(&CPU::and16, &CPU::and32);
+                last_op = Opcode::AND16_32;
             } break;
 
             case 0x22: {
                 execute_binary_operation_8bit<0x22>(&CPU::and8);
+                last_op = Opcode::AND8;
             } break;
 
             case 0x23: {
                 execute_binary_operation_16_32_bit<0x23>(&CPU::and16, &CPU::and32);
+                last_op = Opcode::AND16_32;
             } break;
 
             case 0x24: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::and8);
+                last_op = Opcode::AND8;
             } break;
 
             case 0x25: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::and16, &CPU::and32);
+                last_op = Opcode::AND16_32;
             } break;
 
+            // LCOV_EXCL_START
             case 0x26: {
                 // ES segment override.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x27: {
                 cpu.daa();
+                last_op = Opcode::DAA;
                 ++pc;
             } break;
 
             case 0x28: {
                 execute_binary_operation_8bit<0x28>(&CPU::sub8);
+                last_op = Opcode::SUB8;
             } break;
 
             case 0x29: {
                 execute_binary_operation_16_32_bit<0x29>(&CPU::sub16, &CPU::sub32);
+                last_op = Opcode::SUB16_32;
             } break;
 
             case 0x2A: {
                 execute_binary_operation_8bit<0x2A>(&CPU::sub8);
+                last_op = Opcode::SUB8;
             } break;
 
             case 0x2B: {
                 execute_binary_operation_16_32_bit<0x2B>(&CPU::sub16, &CPU::sub32);
+                last_op = Opcode::SUB16_32;
             } break;
 
             case 0x2C: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::sub8);
+                last_op = Opcode::SUB8;
             } break;
 
             case 0x2D: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::sub16, &CPU::sub32);
+                last_op = Opcode::SUB16_32;
             } break;
 
+            // LCOV_EXCL_START
             case 0x2E: {
                 // CS segment override.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x2F: {
                 cpu.das();
+                last_op = Opcode::DAS;
                 ++pc;
             } break;
 
@@ -492,13 +527,16 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::xor16, &CPU::xor32);
             } break;
 
+            // LCOV_EXCL_START
             case 0x36: {
                 // SS segment override.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x37: {
                 cpu.aaa();
+                last_op = Opcode::AAA;
                 ++pc;
             } break;
 
@@ -526,13 +564,16 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::cmp16, &CPU::cmp32);
             } break;
 
+            // LCOV_EXCL_START
             case 0x3E: {
                 // DS segment override.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x3F: {
                 cpu.aas();
+                last_op = Opcode::AAS;
                 ++pc;
             } break;
 
@@ -540,7 +581,9 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 std::uint32_t& reg = cpu.regat(opcode - 0x40);
                 if (is_16_bit_mode) {
                     set_low_word(reg, cpu.inc16(reg));
+                    last_op = Opcode::INC16;
                 } else {
+                    last_op = Opcode::INC32;
                     reg = cpu.inc32(reg);
                 }
                 ++pc;
@@ -579,8 +622,10 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             case 0x60: {
                 if (is_16_bit_mode) {
                     cpu.pusha();
+                    last_op = Opcode::PUSHA;
                 } else {
                     cpu.pushad();
+                    last_op = Opcode::PUSHAD;
                 }
                 ++pc;
             } break;
@@ -588,8 +633,10 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             case 0x61: {
                 if (is_16_bit_mode) {
                     cpu.popa();
+                    last_op = Opcode::POPA;
                 } else {
                     cpu.popad();
+                    last_op = Opcode::POPAD;
                 }
                 ++pc;
             } break;
@@ -602,10 +649,12 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 is_16_bit_mode = false;
             } break;
 
+            // LCOV_EXCL_START
             case 0x64: {
                 // FS segment override.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x65: {
                 // GS segment override.
@@ -617,8 +666,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                     switch (std::uint8_t sOpcode = cpu.mem[pc + 2]; sOpcode) {
                         default: {
                             std::stringstream ss;
-                            ss << "Unhandled Opcode: 0x66 0xF " << uint(sOpcode);
-                            throw std::logic_error(ss.str());
+                            ss << "Unhandled Opcode: 0x66 0xF " << int(sOpcode);
                         } break;
                     }
                 } else {
@@ -628,10 +676,12 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 }
             } break;
 
+            // LCOV_EXCL_START
             case 0x67: {
                 // Address size override prefix.
                 ++pc;
             } break;
+            // LCOV_EXCL_STOP
 
             case 0x68: {
                 if (is_16_bit_mode) {
@@ -646,12 +696,12 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             } break;
 
             // case 0x69: {
-
             // } break;
 
             case 0x6A: {
                 std::uint8_t imm8 = cpu.mem[pc + 1];
                 cpu.push8(imm8);
+                last_op = Opcode::PUSH8;
                 pc += 2;
             } break;
 
@@ -795,6 +845,10 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 execute_binary_operation_16_32_bit<0x89>(&CPU::mov16, &CPU::mov32);
             } break;
 
+            // case 0x8A: {
+            //     execute_binary_operation_8bit<0x8A>(&CPU::mov8);
+            // }
+
             case 0x8B: {
                 execute_binary_operation_16_32_bit<0x8B>(&CPU::mov16, &CPU::mov32);
             } break;
@@ -826,14 +880,17 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0x90 ... 0x97: {
                 cpu.xchg(cpu.regat(opcode - 0x90));
+                last_op = Opcode::XCHG;
                 ++pc;
             } break;
 
             case 0x98: {
                 if (is_16_bit_mode) {
                     cpu.cbw();
+                    last_op = Opcode::CBW;
                 } else {
                     cpu.cwde();
+                    last_op = Opcode::CWDE;
                 }
                 ++pc;
             } break;
@@ -841,8 +898,10 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             case 0x99: {
                 if (is_16_bit_mode) {
                     cpu.cwd();
+                    last_op = Opcode::CWD;
                 } else {
                     cpu.cdq();
+                    last_op = Opcode::CDQ;
                 }
                 ++pc;
             } break;
@@ -864,6 +923,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0x9F: {
                 cpu.lahf();
+                last_op = Opcode::LAHF;
                 ++pc;
             } break;
 
@@ -1000,22 +1060,26 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             case 0xD4 : {
                 std::uint8_t imm8 = cpu.mem[pc + 1];
                 cpu.aam(imm8);
+                last_op = Opcode::AAM;
                 pc += 1 + sizeof(std::uint8_t);
             } break;
 
             case 0xD5: {
                 std::uint8_t imm8 = cpu.mem[pc + 1];
                 cpu.aad(imm8);
+                last_op = Opcode::AAD;
                 pc += 1 + sizeof(std::uint8_t);
             } break;
 
             case 0xD6: {
                 cpu.salc();
+                last_op = Opcode::SALC;
                 ++pc;
             } break;
 
             case 0xD7: {
                 cpu.xlat();
+                last_op = Opcode::XLAT;
                 ++pc;
             } break;
 
@@ -1385,7 +1449,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0xEB: {
                 std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]) + 2;
-                std::cout << "rel8: " << std::hex << int(rel8) << std::endl;
+                // std::cout << "rel8: " << std::hex << int(rel8) << std::endl;
                 pc += sext(rel8);
             } break;
 
@@ -1413,6 +1477,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0xF5: {
                 cpu.cmc();
+                last_op = Opcode::CMC;
                 ++pc;
             } break;
 
@@ -1523,21 +1588,25 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0xF8: {
                 cpu.clc();
+                last_op = Opcode::CLC;
                 ++pc;
             } break;
 
             case 0xF9: {
                 cpu.stc();
+                last_op = Opcode::STC;
                 ++pc;
             } break;
 
             case 0xFC: {
                 cpu.cld();
+                last_op = Opcode::CLD;
                 ++pc;
             } break;
 
             case 0xFD: {
                 cpu.std();
+                last_op = Opcode::STD;
                 ++pc;
             } break;
 
@@ -1558,4 +1627,8 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             --cycles;
         }
     }
+}
+
+void Executor::run_single_cycle(bool visual_debug) {
+    execute(visual_debug, true, 1);
 }

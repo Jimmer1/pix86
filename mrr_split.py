@@ -9,4 +9,6 @@ opcode = 0x89
 def make_mrr(mod, reg, rm):
     return (mod << 6) | (reg << 3) | rm
 
-print(hex(make_mrr(3, 0, 1)))
+mod, reg, rm = int(input('>')), int(input('>')), int(input('>'))
+
+print(hex(make_mrr(mod, reg, rm)))

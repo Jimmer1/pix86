@@ -89,7 +89,7 @@ struct Operands {
 };
 // LCOV_EXCL_STOP
 
-std::tuple<Operands, unsigned int> decode_modregrm(std::uint8_t, Memory&, unsigned long int, bool);
+std::tuple<Operands, unsigned int> decode_modregrm(std::uint8_t, Memory&, unsigned long int, bool, bool=false);
 
 template <typename I>
 struct StructuredUnaryOperands {
