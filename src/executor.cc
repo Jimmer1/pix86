@@ -505,26 +505,32 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0x30: {
                 execute_binary_operation_8bit<0x30>(&CPU::xor8);
+                last_op = Opcode::XOR8;
             } break;
 
             case 0x31: {
                 execute_binary_operation_16_32_bit<0x31>(&CPU::xor16, &CPU::xor32);
+                last_op = Opcode::XOR16_32;
             } break;
 
             case 0x32: {
                 execute_binary_operation_8bit<0x32>(&CPU::xor8);
+                last_op = Opcode::XOR8;
             } break;
 
             case 0x33: {
                 execute_binary_operation_16_32_bit<0x33>(&CPU::xor16, &CPU::xor32);
+                last_op = Opcode::XOR16_32;
             } break;
 
             case 0x34: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::xor8);
+                last_op = Opcode::XOR8;
             } break;
 
             case 0x35: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::xor16, &CPU::xor32);
+                last_op = Opcode::XOR16_32;
             } break;
 
             // LCOV_EXCL_START
@@ -542,26 +548,32 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0x38: {
                 execute_binary_operation_8bit<0x38>(&CPU::cmp8);
+                last_op = Opcode::CMP8;
             } break;
 
             case 0x39: {
                 execute_binary_operation_16_32_bit<0x39>(&CPU::cmp16, &CPU::cmp32);
+                last_op = Opcode::CMP16_32;
             } break;
 
             case 0x3A: {
                 execute_binary_operation_8bit<0x3A>(&CPU::cmp8);
+                last_op = Opcode::CMP8;
             } break;
 
             case 0x3B: {
                 execute_binary_operation_16_32_bit<0x3B>(&CPU::cmp16, &CPU::cmp32);
+                last_op = Opcode::CMP16_32;
             } break;
 
             case 0x3C: {
                 execute_binary_accumulator_immediate_operation_8bit(&CPU::cmp8);
+                last_op = Opcode::CMP8;
             } break;
 
             case 0x3D: {
                 execute_binary_accumulator_immediate_operation_16_32bit(&CPU::cmp16, &CPU::cmp32);
+                last_op = Opcode::CMP16_32;
             } break;
 
             // LCOV_EXCL_START
@@ -593,8 +605,10 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 std::uint32_t& reg = cpu.regat(opcode - 0x40);
                 if (is_16_bit_mode) {
                     set_low_word(reg, cpu.dec16(reg));
+                    last_op = Opcode::DEC16;
                 } else {
                     reg = cpu.dec32(reg);
+                    last_op = Opcode::DEC32;
                 }
                 ++pc;
             } break;
@@ -1449,7 +1463,6 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
 
             case 0xEB: {
                 std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]) + 2;
-                // std::cout << "rel8: " << std::hex << int(rel8) << std::endl;
                 pc += sext(rel8);
             } break;
 
@@ -1617,11 +1630,13 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             } break;
         }
 
+        // LCOV_EXCL_START
         if (visual_debug_mode) {
             std::cout << cpu << ' ' << pc << ' ' << std::hex << int(opcode) << '\n';
             char c;
             std::cin >> c;
         }
+        // LCOV_EXCL_STOP
 
         if (is_cycles) {
             --cycles;

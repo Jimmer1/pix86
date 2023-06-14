@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <type_traits>
 
 #include <iostream>
 
@@ -44,6 +45,7 @@ enum class Opcode {
     AAA,
     AAD,
     AAM,
+    AAS,
 
     ADC8,
     ADC16_32,
@@ -65,11 +67,17 @@ enum class Opcode {
 
     CMC,
 
+    CMP8,
+    CMP16_32,
+
     CWD,
     CWDE,
 
     DAA,
     DAS,
+
+    DEC16,
+    DEC32,
 
     HLT,
 
@@ -110,7 +118,30 @@ enum class Opcode {
     SUB16_32,
 
     XCHG,
-    XLAT
+    XLAT,
+
+    XOR8,
+    XOR16_32
+};
+
+template <typename I, bool test = 0>
+struct Holder {
+    I value;
+
+    Holder(const I& value_ = I{}) : value(value_) {}
+
+    template <typename J>
+    constexpr Holder& operator=(const J& rhs) {
+        if constexpr (test) {
+            value = static_cast<I>(rhs);
+        }
+        return *this;
+    }
+
+    template <typename J>
+    constexpr bool operator==(const J& rhs) {
+        return value == static_cast<I>(rhs);
+    }
 };
 
 constexpr std::underlying_type_t<Opcode> op_cast(const Opcode& op) {
@@ -212,7 +243,7 @@ public:
 
     friend struct access_executor;
 
-    Opcode last_op;
+    Holder<Opcode, TEST> last_op;
 
     unsigned long int pcnt() const {return pc;}
 

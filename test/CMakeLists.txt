@@ -42,6 +42,7 @@ target_compile_options(pix86_test PRIVATE
     -Wsign-conversion
     -Wunused
     -std=c++23
+    -DTEST=1
     -fprofile-generate 
     -fprofile-arcs -ftest-coverage
     -lgcov --coverage

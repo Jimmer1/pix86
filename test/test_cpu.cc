@@ -9,7 +9,7 @@
 
 void test_cpu_constructor() {
     CPU cpu(1024, 1024);
-    bool t = cpu.R[ESP] == 1023;
+    const bool t = cpu.R[ESP] == 1023;
     assert(t);
 }
 
@@ -29,12 +29,13 @@ void test_segregat() {
     cpu.fs = 0xABCD;
     cpu.gs = 0xAAAA;
 
-    bool t = cpu.segregat(0) == 0xBEEF
+    const bool t1 = cpu.segregat(0) == 0xBEEF
         && cpu.segregat(1) == 0xDEAD
         && cpu.segregat(2) == 0xB00B
         && cpu.segregat(3) == 0x1234
         && cpu.segregat(4) == 0xABCD
         && cpu.segregat(5) == 0xAAAA;
+    assert(t1);
 
     bool t2 = false;
     try {
@@ -42,9 +43,7 @@ void test_segregat() {
     } catch (const std::domain_error& de) {
         t2 = true;
     }
-
-    t = t && t2;
-    assert(t);
+    assert(t2);
 }
 
 void test_aaa() {
@@ -246,6 +245,86 @@ void test_cmc() {
     cpu.flags.carry = true;
     cpu.cmc();
     const bool t2 = !cpu.flags.carry;
+    assert(t2);
+}
+
+void test_cmovc16() {
+    CPU cpu;
+    cpu.flags.carry = false;
+    const bool t1 = cpu.cmovc16(0xDEAD, 0xBEEF) == 0xDEAD;
+    assert(t1);
+    cpu.flags.carry = true;
+    const bool t2 = cpu.cmovc16(0xDEAD, 0xBEEF) == 0xBEEF;
+    assert(t2);
+}
+
+void test_cmovc32() {
+    CPU cpu;
+    cpu.flags.carry = false;
+    const bool t1 = cpu.cmovc32(0xDEADBEEF, 0xBEEFBABE) == 0xDEADBEEF;
+    assert(t1);
+    cpu.flags.carry = true;
+    const bool t2 = cpu.cmovc32(0xDEADBEEF, 0xBEEFBABE) == 0xBEEFBABE;
+    assert(t2);
+}
+
+void test_cmovnc16() {
+    CPU cpu;
+    cpu.flags.carry = false;
+    const bool t1 = cpu.cmovnc16(0xDEAD, 0xBEEF) == 0xBEEF;
+    assert(t1);
+    cpu.flags.carry = true;
+    const bool t2 = cpu.cmovnc16(0xDEAD, 0xBEEF) == 0xDEAD;
+    assert(t2);
+}
+
+void test_cmovnc32() {
+    CPU cpu;
+    cpu.flags.carry = false;
+    const bool t1 = cpu.cmovnc32(0xDEADBEEF, 0xBEEFBABE) == 0xBEEFBABE;
+    assert(t1);
+    cpu.flags.carry = true;
+    const bool t2 = cpu.cmovnc32(0xDEADBEEF, 0xBEEFBABE) == 0xDEADBEEF;
+    assert(t2);
+}
+
+void test_cmovo16() {
+    CPU cpu;
+    cpu.flags.overflow = false;
+    const bool t1 = cpu.cmovo16(0xDEAD, 0xBEEF) == 0xDEAD;
+    assert(t1);
+    cpu.flags.overflow = true;
+    const bool t2 = cpu.cmovo16(0xDEAD, 0xBEEF) == 0xBEEF;
+    assert(t2);
+}
+
+void test_cmovo32() {
+    CPU cpu;
+    cpu.flags.overflow = false;
+    const bool t1 = cpu.cmovo32(0xDEADBEEF, 0xBEEFBABE) == 0xDEADBEEF;
+    assert(t1);
+    cpu.flags.overflow = true;
+    const bool t2 = cpu.cmovo32(0xDEADBEEF, 0xBEEFBABE) == 0xBEEFBABE;
+    assert(t2);
+}
+
+void test_cmovno16() {
+    CPU cpu;
+    cpu.flags.overflow = false;
+    const bool t1 = cpu.cmovno16(0xDEAD, 0xBEEF) == 0xBEEF;
+    assert(t1);
+    cpu.flags.overflow = true;
+    const bool t2 = cpu.cmovno16(0xDEAD, 0xBEEF) == 0xDEAD;
+    assert(t2);
+}
+
+void test_cmovno32() {
+    CPU cpu;
+    cpu.flags.overflow = false;
+    const bool t1 = cpu.cmovno32(0xDEADBEEF, 0xBEEFBABE) == 0xBEEFBABE;
+    assert(t1);
+    cpu.flags.overflow = true;
+    const bool t2 = cpu.cmovno32(0xDEADBEEF, 0xBEEFBABE) == 0xDEADBEEF;
     assert(t2);
 }
 
@@ -603,7 +682,7 @@ void test_sbb32() {
     const bool t1 = cpu.sbb32(0xDEADBEEF, 0xBEEFBABE) == 0x1FBE0431;
     assert(t1);
     cpu.flags.carry = true;
-    const bool t2 = cpu.sbb32(0xDEADBEEf, 0xBEEFBABE) == 0x1FBE0430;
+    const bool t2 = cpu.sbb32(0xDEADBEEF, 0xBEEFBABE) == 0x1FBE0430;
     assert(t2);
 }
 
@@ -716,6 +795,14 @@ void test_cpu() {
     test_clc();
     test_cld();
     test_cmc();
+    test_cmovc16();
+    test_cmovc32();
+    test_cmovnc16();
+    test_cmovnc32();
+    test_cmovno16();
+    test_cmovno32();
+    test_cmovo16();
+    test_cmovo32();
     test_cmp8();
     test_cmp16();
     test_cmp32();

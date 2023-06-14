@@ -2,10 +2,11 @@
 #include "stack.hh"
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 
 void test_stack_pop8() {
-    uint32_t esp = sizeof(std::uint8_t);
+    std::uint32_t esp = sizeof(std::uint8_t);
     Stack stack{sizeof(std::uint8_t) + 1, esp};
     stack.push(0xAA_u8);
     const auto v = stack.pop<std::uint8_t>();
@@ -14,7 +15,7 @@ void test_stack_pop8() {
 }
 
 void test_stack_pop16() {
-    uint32_t esp = sizeof(std::uint16_t);
+    std::uint32_t esp = sizeof(std::uint16_t);
     Stack stack{sizeof(std::uint16_t) + 1, esp};
     stack.push(0xAABB_u16);
     const auto v = stack.pop<u16>();
@@ -23,7 +24,7 @@ void test_stack_pop16() {
 }
 
 void test_stack_pop32() {
-    uint32_t esp = sizeof(std::uint32_t);
+    std::uint32_t esp = sizeof(std::uint32_t);
     Stack stack{sizeof(std::uint32_t) + 1, esp};
     stack.push(0xAABBCCDD_u32);
     const auto v = stack.pop<std::uint32_t>();
@@ -32,7 +33,7 @@ void test_stack_pop32() {
 }
 
 void test_stack_push8() {
-    uint32_t esp = 0xFFFF;
+    std::uint32_t esp = 0xFFFF;
     Stack stack{0x10000, esp};
     stack.push(0xDE_u8);
     const bool t = *stack.mem_access(0xFFFE) == 0xDE && stack.esp() == 0xFFFE;
@@ -40,7 +41,7 @@ void test_stack_push8() {
 }
 
 void test_stack_push16() {
-    uint32_t esp = 0xFFFF;
+    std::uint32_t esp = 0xFFFF;
     Stack stack{0x10000, esp};
     stack.push(0xDEAD_u16);
     const std::uint8_t expected[] = {0xAD, 0xDE};
@@ -50,7 +51,7 @@ void test_stack_push16() {
 }
 
 void test_stack_push32() {
-    uint32_t esp = 0xFFFF;
+    std::uint32_t esp = 0xFFFF;
     Stack stack{0x10000, esp};
     stack.push(0xDEADBEEF_u32);
     const std::uint8_t expected[] = {0xEF, 0xBE, 0xAD, 0xDE};
