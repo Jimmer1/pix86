@@ -416,16 +416,16 @@ void CPU::popad() {
 // Exclude these functions from unit testing as they are wrappers for functions
 // which have already been tested and it's my project so fuck you!
 // LCOV_EXCL_START
-void CPU::push8(std::uint8_t v) {
-    stack.push(v);
+void CPU::push8(const std::uint8_t value) {
+    stack.push(value);
 }
 
-void CPU::push16(std::uint16_t v) {
-    stack.push(v);
+void CPU::push16(const std::uint16_t value) {
+    stack.push(value);
 }
 
-void CPU::push32(std::uint32_t v) {
-    stack.push(v);
+void CPU::push32(const std::uint32_t value) {
+    stack.push(value);
 }
 // LCOV_EXCL_STOP
 

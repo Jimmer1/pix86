@@ -15,6 +15,19 @@ public:
     bool direction = false;
     bool overflow = false;
 
+    unsigned int iopl : 2;
+
+    bool nt = false;
+    bool md = false;
+
+    bool resume = false;
+    bool virtual_8086 = false;
+    bool alignment = false;
+    bool vif = false;
+    bool vip = false;
+    bool id = false;
+
+
     std::uint8_t get_flags8() const;
     void set_flags8(std::uint8_t b);
 

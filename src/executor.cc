@@ -111,7 +111,7 @@ void Executor::execute_binary_immediate_regencoded_operation_16_32bit() {
     reset_prefixes();
 }
 
-void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned int cycles) {
+void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned int cycles, unsigned int start) {
     
     for (; !is_cycles || cycles > 0; ) {
         // std::cout << "Opcode address " << std::hex << std::size_t(&cpu.mem[pc]) << std::endl;
@@ -617,19 +617,23 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
                 const auto reg = cpu.regat(opcode - 0x50);
                 if (is_16_bit_mode) {
                     cpu.push16(get_low_word(reg));
+                    last_op = Opcode::PUSH16;
                 } else {
                     cpu.push32(reg);
+                    last_op = Opcode::PUSH32;
                 }
                 ++pc;
             } break;
 
             case 0x58 ... 0x5B: {
                 set_low_byte(cpu.regat(opcode - 0x58), cpu.pop8());
+                last_op = Opcode::PUSH8;
                 ++pc;
             } break;
 
             case 0x5C ... 0x5F: {
                 set_low_word_high_byte(cpu.regat(opcode - 0x5C), cpu.pop8());
+                last_op = Opcode::PUSH8;
                 ++pc;
             } break;
             
@@ -720,128 +724,128 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             } break;
 
             case 0x70: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x71: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x72: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.carry) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x73: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.carry) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x74: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.zero) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x75: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.zero) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x76: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.carry || cpu.flags.zero) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x77: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.carry && ! cpu.flags.zero) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x78: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.sign) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x79: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.sign) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7A: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.parity) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7B: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (! cpu.flags.parity) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7C: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.sign != cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7D: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.sign == cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7E: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (cpu.flags.zero || cpu.flags.sign != cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
             } break;
 
             case 0x7F: {
+                std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                 if (!cpu.flags.zero && cpu.flags.sign == cpu.flags.overflow) {
-                    std::int8_t rel8 = mread<std::int8_t>(&cpu.mem[pc + 1]);
                     pc += sext(rel8);
                 }
                 pc += 2;
@@ -868,7 +872,7 @@ void Executor::execute(bool visual_debug_mode, const bool is_cycles, unsigned in
             } break;
 
             case 0x8D: {
-                std::uint8_t mrr = cpu.mem[pc + 1];
+                const std::uint8_t mrr = cpu.mem[pc + 1];
                 const auto [op, skip] = decode_modregrm(mrr, cpu.mem, pc, false);
                 std::uint32_t address = op.rm.displacement;
                 if (op.rm.reg_field) {

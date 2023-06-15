@@ -20,7 +20,6 @@ target_include_directories(pix86_test PRIVATE ../include)
 target_include_directories(mrr_vis PRIVATE ../include)
 
 target_link_libraries(pix86_test PRIVATE gcov)
-target_link_libraries(mrr_vis PRIVATE gcov)
 
 target_compile_options(pix86_test PRIVATE
     -g
@@ -73,9 +72,6 @@ target_compile_options(mrr_vis PRIVATE
     -Wsign-conversion
     -Wunused
     -std=c++23
-    -fprofile-generate 
-    -fprofile-arcs -ftest-coverage
-    -lgcov --coverage
 
     # Disabled warning flags.
     # -Wno-gnu-case-range

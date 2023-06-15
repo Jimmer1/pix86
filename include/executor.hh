@@ -4,6 +4,7 @@
 #include "cpu.hh"
 #include "decoder.hh"
 #include "fpu.hh"
+#include "opcode.hh"
 
 #include <cstddef>
 #include <cstdint>
@@ -38,91 +39,7 @@ void binary_operation(StructuredOperands<I>& so, CPU& cpu, I(CPU::*op)(I, I), bo
     }
 }
 
-enum class Opcode {
 
-    NULL_OP,
-
-    AAA,
-    AAD,
-    AAM,
-    AAS,
-
-    ADC8,
-    ADC16_32,
-    ADD8,
-    ADD16_32,
-    AND8,
-    AND16_32,
-
-    CBW,
-    CDQ,
-
-    CLC,
-    CLD,
-
-    CMOVC16_32,
-    CMOVNC16_32,
-    CMOVNO16_32,
-    CMOVO16_32,
-
-    CMC,
-
-    CMP8,
-    CMP16_32,
-
-    CWD,
-    CWDE,
-
-    DAA,
-    DAS,
-
-    DEC16,
-    DEC32,
-
-    HLT,
-
-    INC16,
-    INC32,
-
-    LAHF,
-
-    OR8,
-    OR16_32,
-
-    POPA,
-    POPAD,
-
-    PUSH8,
-    PUSHA,
-    PUSHAD,
-    PUSH_CS,
-    PUSH_DS,
-    POP_DS,
-    POP_ES,
-    PUSH_ES,
-    PUSH_FS,
-    PUSH_GS,
-    POP_SS,
-    PUSH_SS,
-
-    SAHF,
-    SALC,
-
-    SBB8,
-    SBB16_32,
-
-    STC,
-    STD,
-
-    SUB8,
-    SUB16_32,
-
-    XCHG,
-    XLAT,
-
-    XOR8,
-    XOR16_32
-};
 
 template <typename I, bool test = 0>
 struct Holder {
@@ -143,10 +60,6 @@ struct Holder {
         return value == static_cast<I>(rhs);
     }
 };
-
-constexpr std::underlying_type_t<Opcode> op_cast(const Opcode& op) {
-    return std::underlying_type_t<Opcode>(op);
-}
 
 /*
     struct OperationData {
@@ -247,11 +160,17 @@ public:
 
     unsigned long int pcnt() const {return pc;}
 
-    Executor(std::span<const std::uint8_t> code) : fpu(cpu.flags) {
-        std::copy(code.begin(), code.end(), cpu.mem.begin());
+    Executor(std::span<const std::uint8_t> code,
+             const std::size_t mem_size = 1_mb,
+             const std::size_t stack_size = 1_mb,
+             const unsigned long int start = 0) : cpu(mem_size, stack_size) fpu(cpu.flags) {
+        if (start > cpu.mem.size() || (start + code.size()) > cpu.mem.size())
+            throw std::domain_error("Invalid constructor arguments for constructor Executor");
+        std::copy(code.begin(), code.end(), cpu.mem.begin() + start);
+        pc = start;
     }
 
-    void execute(bool, bool, unsigned int = 0);
+    void execute(bool, bool, unsigned int = 0, unsigned int start = 0);
     void run_single_cycle(bool=false);
 };
 

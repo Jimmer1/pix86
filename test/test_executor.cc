@@ -929,6 +929,42 @@ void test_opcode<0x40, 0x47>() {
 }
 
 template <>
+void test_opcode<0x50, 0x57>() {
+    const std::uint8_t code[] = {0x50, 0x50};
+    Executor exe(code);
+    exe.is_16_bit_mode = true;
+    exe.run_single_cycle();
+    const bool t1 = exe.last_op == Opcode::PUSH16
+        && exe.pcnt() == 1;
+    assert(t1);
+    exe.is_16_bit_mode = false;
+    exe.run_single_cycle();
+    const bool t2 = exe.last_op == Opcode::PUSH32
+        && exe.pcnt() == 2;
+    assert(t2);
+}
+
+template <>
+void test_opcode<0x58, 0x5B>() {
+    const std::uint8_t code[] = {0x58};
+    Executor exe(code);
+    exe.run_single_cycle();
+    const bool t = exe.last_op == Opcode::PUSH8
+        && exe.pcnt() == 1;
+    assert(t);
+}
+
+template <>
+void test_opcode<0x5C, 0x5F>() {
+    const std::uint8_t code[] = {0x5C};
+    Executor exe(code);
+    exe.run_single_cycle();
+    const bool t = exe.last_op == Opcode::PUSH8
+        && exe.pcnt() == 1;
+    assert(t);
+}
+
+template <>
 void test_opcode<0x60>() {
     const std::uint8_t code[] = {0x60, 0x60};
     Executor exe(code);
@@ -1221,6 +1257,8 @@ void test_executor() {
 
     test_opcode<0x3F>();
     test_opcode<0x40, 0x47>();
+
+    test_opcode<0x50, 0x57>();
 
     test_opcode<0x60>();
     test_opcode<0x61>();

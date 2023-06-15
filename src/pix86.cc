@@ -8,10 +8,6 @@
 
 // LCOV_EXCL_START
 int main([[maybe_unused]] int argc, char** argv) {
-    if (argc > 1) {
-        [[maybe_unused]] const auto filename = argv[1];
-    }
-
     std::ifstream reader(argv[1]);
     std::vector<std::uint8_t> code;
     uint c;
